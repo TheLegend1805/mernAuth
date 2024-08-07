@@ -24,3 +24,13 @@ app.listen(process.env.PORT, () => {
 
 app.use("/api/user/", userRoutes);
 app.use("/api/auth/", authRoutes);
+
+app.use((error, req, res, next) => {
+  const statusCode = error.statusCode || 500;
+  const msg = error.msg || "Internal Server Error";
+  return res.status(statusCode).json({
+    success: false,
+    msg,
+    statusCode,
+  });
+});
