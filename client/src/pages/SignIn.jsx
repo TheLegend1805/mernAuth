@@ -1,11 +1,18 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  signInStart,
+  signInFailure,
+  signInSuccess,
+} from "../redux/user/userSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 const SignIn = () => {
   const [formData, setFormData] = useState({});
-  const [error, setError] = useState(false);
+  const { loading, error } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+
   const handleChange = (event) => {
     setFormData({ ...formData, [event.target.name]: event.target.value });
   };
@@ -13,8 +20,7 @@ const SignIn = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      setLoading(true);
-      setError(false);
+      dispatch(signInStart()); // Set loading to true
       const res = await fetch("http://localhost:4000/api/auth/signin", {
         method: "POST",
         headers: {
@@ -22,12 +28,19 @@ const SignIn = () => {
         },
         body: JSON.stringify(formData),
       });
+
       const data = await res.json();
-      setLoading(false);
+
+      if (!res.ok) {
+        // Check if the response is not OK
+        dispatch(signInFailure(data.message || "Login failed!")); // Dispatch the error message
+        return;
+      }
+
+      dispatch(signInSuccess(data));
       navigate("/");
     } catch (error) {
-      setLoading(false);
-      setError(true);
+      dispatch(signInFailure(error.message || "Something went wrong")); // Use error.message
     }
   };
 
@@ -67,7 +80,10 @@ const SignIn = () => {
           </Link>
         </p>
       </div>
-      <p className="text-red-600 mt-5">{error && "Something went wrong"}</p>
+
+      {error && ( // Conditional rendering for error message
+        <p className="text-red-600 mt-5">{error}</p>
+      )}
     </div>
   );
 };
